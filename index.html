@@ -180,7 +180,7 @@
             }
             produtos.forEach(p => {
                 const precoFormatado = p.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-                const imgSource = (p.imagem && p.imagem.startsWith('http')) ? p.imagem : `./assets/images/${p.imagem || 'logo-sorvete.webp'}`;
+                const imgSource = (p.imagens && p.imagens.startsWith('http')) ? p.imagens : `./assets/images/${p.imagens || 'logo-sorvete.webp'}`;
                 
                 const descSanitizada = (p.descricao || '').replace(/'/g, "\\'").replace(/\n/g, " ");
 
