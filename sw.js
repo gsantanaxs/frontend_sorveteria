@@ -4,8 +4,6 @@ const ASSETS = [
     './index.html',
     './manifest.json',
     './assets/images/logo-sorvete.webp',
-    './assets/images/logo-celular.png',
-    './assets/images/logo-512.png',
     './assets/images/sorvete.webp',
     './assets/images/whatsapp.webp',
 ];
