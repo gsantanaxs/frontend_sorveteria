@@ -289,34 +289,72 @@
 
         async function fecharPedido() {
             if (carrinho.length === 0) return;
+
+            const nome = document.getElementById('cliente-nome').value.trim();
+            const endereco = document.getElementById('cliente-endereco').value.trim();
+
+            if (!nome || !endereco) {
+                alert("Por favor, preencha seu nome e endereço para finalizar o pedido.");
+                return;
+            }
+
             const btn = document.getElementById('btn-fechar-pedido');
-            btn.innerText = "LOCALIZANDO...";
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = "ENVIANDO PEDIDO...";
+
             navigator.geolocation.getCurrentPosition(
-                (pos) => {
+                async (pos) => {
                     const lat = pos.coords.latitude;
                     const lng = pos.coords.longitude;
-                    btn.innerText = "Fechar Pedido (Usar GPS)";
-                    alert(`Pedido Finalizado com Sucesso via GPS!\nLocalização: ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
-                    carrinho = [];
-                    atualizarCarrinho();
-                    fecharModalCarrinho();
+                    const enderecoComGPS = `${endereco} (GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+                    await enviarPedidoAPI(nome, enderecoComGPS);
+                    btn.disabled = false;
+                    btn.innerText = originalText;
                 },
-                (err) => {
-                    btn.innerText = "Fechar Pedido (Usar GPS)";
-                    alert("Pedido Finalizado!");
-                    carrinho = [];
-                    atualizarCarrinho();
-                    fecharModalCarrinho();
+                async (err) => {
+                    await enviarPedidoAPI(nome, endereco);
+                    btn.disabled = false;
+                    btn.innerText = originalText;
                 }
             );
+        }
 
-             const nome = document.getElementById('cliente-nome').value;
-          const endereco = document.getElementById('cliente-endereco').value;
+        async function enviarPedidoAPI(nome, endereco) {
+            const total = carrinho.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
+            const itensFormatados = carrinho.map(item => ({
+                nome: item.nome,
+                preco: item.preco,
+                quantidade: item.quantidade
+            }));
 
-          if(!nome || !endereco){
-            alert("Por favor, preencha seu nome e endereço para finalizar o pedido.");
-            return;
-          }
+            const payload = {
+                cliente_nome: nome,
+                cliente_endereco: endereco,
+                itens: itensFormatados,
+                total: total
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/pedidos`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error("Erro de conexão");
+
+                alert("Pedido Finalizado e enviado para a cozinha com sucesso!");
+                carrinho = [];
+                atualizarCarrinho();
+                fecharModalCarrinho();
+                
+                document.getElementById('cliente-nome').value = '';
+                document.getElementById('cliente-endereco').value = '';
+            } catch (error) {
+                console.error(error);
+                alert("Erro ao enviar pedido para o servidor. Tente novamente.");
+            }
         }
 
         function inicializar() {
