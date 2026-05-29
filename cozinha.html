@@ -418,11 +418,17 @@
             containerFinalizados.innerHTML = '';
 
             // Obtém do local storage os ids dos pedidos concluídos na sessão
-            const pedidosConcluidosIds = JSON.parse(localStorage.getItem('pedidos_concluidos') || '[]');
+            let pedidosConcluidosIds = [];
+            try {
+                pedidosConcluidosIds = JSON.parse(localStorage.getItem('pedidos_concluidos') || '[]');
+            } catch (e) {
+                console.error("Erro ao carregar pedidos_concluidos:", e);
+                localStorage.removeItem('pedidos_concluidos');
+            }
 
             // Separa os pedidos
-            const pendentes = pedidos.filter(p => !pedidosConcluidosIds.includes(p.id) && p.status !== 'Finalizado');
-            const finalizados = pedidos.filter(p => pedidosConcluidosIds.includes(p.id) || p.status === 'Finalizado');
+            const pendentes = pedidos.filter(p => !pedidosConcluidosIds.map(String).includes(String(p.id)) && p.status !== 'Finalizado');
+            const finalizados = pedidos.filter(p => pedidosConcluidosIds.map(String).includes(String(p.id)) || p.status === 'Finalizado');
 
             // Renderizar Pendentes
             if (pendentes.length === 0) {
@@ -450,7 +456,7 @@
                 });
             }
 
-            // Atualiza contador de pendentes
+            // Para debugar ou atualizar contador de pendentes
             document.getElementById('contador-pedidos').innerText = `${pendentes.length} pedido(s)`;
         }
 
@@ -469,7 +475,7 @@
             let htmlItens = itens.map(item => `
                 <li class="flex justify-between border-b border-gray-100 py-2">
                     <span class="font-semibold text-dark">${item.quantidade || 1}x ${item.nome || 'Produto'}</span> 
-                    <span class="text-muted">R$ ${(item.preco || 0).toFixed(2)}</span>
+                    <span class="text-muted">R$ ${Number(item.preco || 0).toFixed(2)}</span>
                 </li>
             `).join('');
 
@@ -484,11 +490,11 @@
             const statusClass = isConcluido ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-yellow-100 text-yellow-800 border border-yellow-200';
 
             const acaoBotao = isConcluido ? `
-                <button onclick="reabrirPedido(${pedido.id})" class="bg-gray-100 hover:bg-gray-200 text-dark px-4 py-2 rounded-lg font-bold border border-gray-200 transition active:scale-95 text-xs">
+                <button onclick="reabrirPedido('${pedido.id}')" class="bg-gray-100 hover:bg-gray-200 text-dark px-4 py-2 rounded-lg font-bold border border-gray-200 transition active:scale-95 text-xs">
                     Reabrir ↩
                 </button>
             ` : `
-                <button onclick="finalizarPedido(${pedido.id})" class="bg-green-600 text-white px-5 py-2 rounded-lg font-bold hover:bg-green-700 transition transform hover:scale-105 active:scale-95 text-sm shadow">
+                <button onclick="finalizarPedido('${pedido.id}')" class="bg-green-600 text-white px-5 py-2 rounded-lg font-bold hover:bg-green-700 transition transform hover:scale-105 active:scale-95 text-sm shadow">
                     Pronto ✓
                 </button>
             `;
@@ -524,7 +530,7 @@
                     <div class="mt-auto pt-4 border-t border-gray-200 flex justify-between items-center">
                         <div class="flex flex-col">
                             <span class="text-[10px] text-muted font-bold uppercase tracking-wider">Total a pagar</span>
-                            <span class="font-black text-xl text-primary">R$ ${(pedido.total || 0).toFixed(2)}</span>
+                            <span class="font-black text-xl text-primary">R$ ${Number(pedido.total || 0).toFixed(2)}</span>
                         </div>
                         ${acaoBotao}
                     </div>
@@ -535,9 +541,15 @@
         // Função funcional para concluir o pedido (salva no localStorage e tenta atualizar o status no Express)
         async function finalizarPedido(id) {
             // Adiciona no cache do localStorage
-            const pedidosConcluidos = JSON.parse(localStorage.getItem('pedidos_concluidos') || '[]');
-            if (!pedidosConcluidos.includes(id)) {
-                pedidosConcluidos.push(id);
+            let pedidosConcluidos = [];
+            try {
+                pedidosConcluidos = JSON.parse(localStorage.getItem('pedidos_concluidos') || '[]');
+            } catch (e) {
+                console.error(e);
+            }
+            const idStr = String(id);
+            if (!pedidosConcluidos.map(String).includes(idStr)) {
+                pedidosConcluidos.push(idStr);
                 localStorage.setItem('pedidos_concluidos', JSON.stringify(pedidosConcluidos));
             }
 
@@ -559,8 +571,14 @@
         // Função funcional para reabrir o pedido finalizado
         async function reabrirPedido(id) {
             // Remove do cache do localStorage
-            let pedidosConcluidos = JSON.parse(localStorage.getItem('pedidos_concluidos') || '[]');
-            pedidosConcluidos = pedidosConcluidos.filter(item => item !== id);
+            let pedidosConcluidos = [];
+            try {
+                pedidosConcluidos = JSON.parse(localStorage.getItem('pedidos_concluidos') || '[]');
+            } catch (e) {
+                console.error(e);
+            }
+            const idStr = String(id);
+            pedidosConcluidos = pedidosConcluidos.filter(item => String(item) !== idStr);
             localStorage.setItem('pedidos_concluidos', JSON.stringify(pedidosConcluidos));
 
             // Envia requisição PUT de segundo plano
@@ -664,7 +682,7 @@
             }
 
             produtos.forEach(p => {
-                const precoFormatado = p.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                const precoFormatado = Number(p.preco || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
                 const imgSource = (p.imagens && p.imagens.startsWith('http')) ? p.imagens : `./img/${p.imagens || 'logo.png'}`;
                 
                 // Mapeamento de nome de categoria
@@ -691,10 +709,10 @@
                                 <span class="font-black text-lg text-primary">${precoFormatado}</span>
                             </div>
                             <div class="flex gap-2">
-                                <button onclick="abrirModalProduto(${p.id})" class="bg-gray-100 hover:bg-gray-200 text-dark p-2.5 rounded-xl transition active:scale-95" title="Editar Produto">
+                                <button onclick="abrirModalProduto('${p.id}')" class="bg-gray-100 hover:bg-gray-200 text-dark p-2.5 rounded-xl transition active:scale-95" title="Editar Produto">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                 </button>
-                                <button onclick="abrirConfirmDelete(${p.id}, '${p.nome.replace(/'/g, "\\'")}')" class="bg-red-50 hover:bg-red-100 text-red-600 p-2.5 rounded-xl transition active:scale-95" title="Excluir Produto">
+                                <button onclick="abrirConfirmDelete('${p.id}', '${p.nome.replace(/'/g, "\\'")}')" class="bg-red-50 hover:bg-red-100 text-red-600 p-2.5 rounded-xl transition active:scale-95" title="Excluir Produto">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                 </button>
                             </div>
@@ -933,10 +951,10 @@
                             <h3 class="font-extrabold text-xl text-dark group-hover:text-primary transition mt-0.5">${cat.nome}</h3>
                         </div>
                         <div class="flex gap-2">
-                            <button onclick="abrirModalCategoria(${cat.id})" class="bg-gray-100 hover:bg-gray-200 text-dark p-2.5 rounded-xl transition active:scale-95" title="Editar Categoria">
+                            <button onclick="abrirModalCategoria('${cat.id}')" class="bg-gray-100 hover:bg-gray-200 text-dark p-2.5 rounded-xl transition active:scale-95" title="Editar Categoria">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                             </button>
-                            <button onclick="abrirConfirmDeleteCat(${cat.id}, '${cat.nome.replace(/'/g, "\\'")}')" class="bg-red-50 hover:bg-red-100 text-red-600 p-2.5 rounded-xl transition active:scale-95" title="Excluir Categoria">
+                            <button onclick="abrirConfirmDeleteCat('${cat.id}', '${cat.nome.replace(/'/g, "\\'")}')" class="bg-red-50 hover:bg-red-100 text-red-600 p-2.5 rounded-xl transition active:scale-95" title="Excluir Categoria">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                             </button>
                         </div>

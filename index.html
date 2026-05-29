@@ -358,18 +358,35 @@
         }
 
         function inicializar() {
-            const salvo = localStorage.getItem('haruy_carrinho');
-            if (salvo) { carrinho = JSON.parse(salvo); atualizarCarrinho(); }
+            try {
+                const salvo = localStorage.getItem('haruy_carrinho');
+                if (salvo) { 
+                    carrinho = JSON.parse(salvo); 
+                    atualizarCarrinho(); 
+                }
+            } catch (e) {
+                console.error("Erro ao carregar carrinho:", e);
+                carrinho = [];
+                localStorage.removeItem('haruy_carrinho');
+            }
             carregarCategorias();
         }
         inicializar();
 
-        if('serviceWorker' in navigator){
-            window.addEventListener('load', () =>{
-                navigator.serviceWorker.register('./sw.js')
-                .then(reg=>console.log("Service Worker Registrado no Porto!", reg))
-                .catch(err=>console.log("Erro ao preparar o sushi", err));
-            })
+        // Desativar e remover Service Worker antigo para evitar problemas de cache
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for (let registration of registrations) {
+                    registration.unregister();
+                }
+            });
+        }
+        if ('caches' in window) {
+            caches.keys().then(function(names) {
+                for (let name of names) {
+                    caches.delete(name);
+                }
+            });
         }
 
     </script>
