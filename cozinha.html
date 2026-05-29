@@ -665,11 +665,11 @@
 
             produtos.forEach(p => {
                 const precoFormatado = p.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-                const imgSource = (p.imagem && p.imagem.startsWith('http')) ? p.imagem : `./img/${p.imagem || 'logo.png'}`;
+                const imgSource = (p.imagens && p.imagens.startsWith('http')) ? p.imagens : `./img/${p.imagens || 'logo.png'}`;
                 
                 // Mapeamento de nome de categoria
-                const categoriaObj = categoriasData.find(cat => cat.id == p.categoriaId);
-                const categoriaNome = categoriaObj ? categoriaObj.nome : p.categoriaId;
+                const categoriaObj = categoriasData.find(cat => cat.id == p.categoria_id);
+                const categoriaNome = categoriaObj ? categoriaObj.nome : p.categoria_id;
 
                 const card = `
                     <div class="bg-white border border-gray-100 shadow-md rounded-2xl p-5 flex flex-col hover:shadow-xl transition duration-300 relative group">
@@ -682,7 +682,7 @@
                         
                         <div class="flex-grow">
                             <h3 class="font-extrabold text-lg text-dark group-hover:text-primary transition line-clamp-1">${p.nome}</h3>
-                            <p class="text-muted text-xs mt-1 h-12 overflow-hidden text-ellipsis line-clamp-3 leading-relaxed">${p.descricao || 'Sem descrição.'}</p>
+                            <p class="text-muted text-xs mt-1 h-12 overflow-hidden text-ellipsis line-clamp-3 leading-relaxed">${p.sabor || 'Sem sabor/descrição.'}</p>
                         </div>
                         
                         <div class="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center">
@@ -728,10 +728,10 @@
                 if (prod) {
                     document.getElementById('prod-id').value = prod.id;
                     document.getElementById('prod-nome').value = prod.nome;
-                    document.getElementById('prod-categoria').value = prod.categoriaId;
+                    document.getElementById('prod-categoria').value = prod.categoria_id;
                     document.getElementById('prod-preco').value = prod.preco;
-                    document.getElementById('prod-desc').value = prod.descricao || '';
-                    document.getElementById('prod-imagem').value = prod.imagem || '';
+                    document.getElementById('prod-desc').value = prod.sabor || '';
+                    document.getElementById('prod-imagem').value = prod.imagens || '';
                 }
             } else {
                 // Modo de Cadastro (POST)
@@ -756,22 +756,23 @@
 
             const id = document.getElementById('prod-id').value;
             const nome = document.getElementById('prod-nome').value;
-            const categoriaId = parseInt(document.getElementById('prod-categoria').value);
+            const categoria_id = document.getElementById('prod-categoria').value;
             const preco = parseFloat(document.getElementById('prod-preco').value);
             const imagem = document.getElementById('prod-imagem').value || 'logo.png';
             const descricao = document.getElementById('prod-desc').value;
 
-            if (!nome || !categoriaId || isNaN(preco)) {
+            if (!nome || !categoria_id || isNaN(preco)) {
                 alert("Por favor, preencha todos os campos obrigatórios (*)");
                 return;
             }
 
             const payload = {
                 nome,
-                categoriaId,
+                categoria_id,
                 preco,
-                imagem,
-                descricao
+                imagens: imagem,
+                sabor: descricao,
+                disponivel: true
             };
 
             const btnSalvar = document.getElementById('btn-salvar-produto');

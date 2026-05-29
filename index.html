@@ -112,7 +112,7 @@
     </section>
 
     <script>
-        const API_URL = 'https://vercel-sorveteria.vercel.app/';
+        const API_URL = 'https://vercel-sorveteria.vercel.app/api';
         const navCategorias = document.getElementById('nav-categorias');
         const listaProdutos = document.getElementById('lista-produtos');
         const categoriaTitulo = document.getElementById('categorias-titulo');
@@ -182,7 +182,7 @@
                 const precoFormatado = p.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
                 const imgSource = (p.imagens && p.imagens.startsWith('http')) ? p.imagens : `./assets/images/${p.imagens || 'logo-sorvete.webp'}`;
                 
-                const descSanitizada = (p.descricao || '').replace(/'/g, "\\'").replace(/\n/g, " ");
+                const descSanitizada = (p.sabor || '').replace(/'/g, "\\'").replace(/\n/g, " ");
 
                 const card = document.createElement('div');
                 card.className = "bg-white rounded-[25px] p-4 shadow-sm border border-gray-100 relative flex flex-col hover:shadow-xl transition-all duration-300 group";
